@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import { integrationReadiness } from '../lib/integration.mjs';test('integration stays disabled',()=>assert.equal(integrationReadiness().ecosystemConnected,false));

@@ -1,0 +1,1 @@
+import test from 'node:test';import assert from 'node:assert/strict';import { requestAllowed } from '../lib/http.mjs';test('host guard rejects non-loopback host',()=>assert.equal(requestAllowed({headers:{host:'evil.example'}}),false));test('loopback host is allowed without origin',()=>assert.equal(requestAllowed({headers:{host:'127.0.0.1:17432'}}),true));

@@ -1,0 +1,8 @@
+import test from 'node:test';import assert from 'node:assert/strict';import { mkdtemp,rm,readFile } from 'node:fs/promises';import { Readable } from 'node:stream';import { tmpdir } from 'node:os';import { join } from 'node:path';import { JsonStore } from '../lib/store.mjs';import { ArtifactService,blobPath,safeName } from '../lib/artifact.mjs';
+async function setup(fn){const d=await mkdtemp(join(tmpdir(),'artifact-test-'));try{const s=await new ArtifactService(await new JsonStore(join(d,'state.json')).init(),d,{maxUploadBytes:1024}).init();await fn(s,d);}finally{await rm(d,{recursive:true,force:true})}}
+const req=b=>Readable.from([Buffer.from(b)]);
+test('safeName removes path separators',()=>assert.equal(safeName('../x\\y.txt'),'.._x_y.txt'));
+test('same bytes deduplicate underlying blob',()=>setup(async s=>{const a=await s.ingest(req('hello'),{name:'a.txt',mediaType:'text/plain'});const b=await s.ingest(req('hello'),{name:'b.txt',mediaType:'text/plain'});assert.equal(a.digest,b.digest);assert.equal(b.deduplicated,true);assert.equal(s.stats().uniqueBlobs,1)}));
+test('verify recomputes sha256',()=>setup(async s=>{const a=await s.ingest(req('hello'),{name:'a',mediaType:'text/plain'});assert.equal((await s.verify(a.id)).ok,true)}));
+test('last metadata delete removes blob',()=>setup(async(s,d)=>{const a=await s.ingest(req('hello'),{name:'a',mediaType:'x'});const out=await s.remove(a.id);assert.equal(out.blobDeleted,true);await assert.rejects(()=>readFile(blobPath(d,a.digest)))}));
+test('oversize upload fails',()=>setup(async s=>{await assert.rejects(()=>s.ingest(req('x'.repeat(2000)),{name:'a',mediaType:'x'}),/exceeds/)}));

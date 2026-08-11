@@ -1,0 +1,1 @@
+{"product_id":"inmyartifact","product_name":"InMyArtifact","repository_name":"Inmyartifact","version":"0.1.0","integration_status":"prepared_not_connected","default_endpoint":"http://127.0.0.1:17432","capabilities":["artifact.put","artifact.metadata.read","artifact.bytes.read","artifact.verify","artifact.delete"],"ecosystem_connection":false}
