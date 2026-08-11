@@ -6,3 +6,5 @@ test('same bytes deduplicate underlying blob',()=>setup(async s=>{const a=await 
 test('verify recomputes sha256',()=>setup(async s=>{const a=await s.ingest(req('hello'),{name:'a',mediaType:'text/plain'});assert.equal((await s.verify(a.id)).ok,true)}));
 test('last metadata delete removes blob',()=>setup(async(s,d)=>{const a=await s.ingest(req('hello'),{name:'a',mediaType:'x'});const out=await s.remove(a.id);assert.equal(out.blobDeleted,true);await assert.rejects(()=>readFile(blobPath(d,a.digest)))}));
 test('oversize upload fails',()=>setup(async s=>{await assert.rejects(()=>s.ingest(req('x'.repeat(2000)),{name:'a',mediaType:'x'}),/exceeds/)}));
+
+test('delete and identical re-upload are serialized safely',()=>setup(async s=>{const first=await s.ingest(req('hello'),{name:'a',mediaType:'x'});const [removed,second]=await Promise.all([s.remove(first.id),s.ingest(req('hello'),{name:'b',mediaType:'x'})]);assert.equal(removed.removed,true);assert.equal((await s.verify(second.id)).ok,true);assert.equal(s.stats().records,1)}));
