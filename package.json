@@ -1,1 +1,17 @@
-{"name":"inmy-artifact","version":"0.1.0","private":true,"type":"module","engines":{"node":">=22"},"scripts":{"start":"node server.mjs","test":"node --test","smoke":"node scripts/smoke.mjs","qa":"npm test && npm run smoke"}}
+{
+  "name": "inmy-artifact",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check lib/artifact.mjs && node --check lib/http.mjs && node --check lib/integration.mjs && node --check lib/resolver.mjs && node --check lib/resolver-registry.mjs && node --check lib/reconciliation.mjs && node --check lib/store.mjs && node --check server.mjs && node --check scripts/recovery-smoke.mjs",
+    "test": "node --test",
+    "smoke": "node scripts/smoke.mjs",
+    "recovery-smoke": "node scripts/recovery-smoke.mjs",
+    "qa": "npm run check && npm test && npm run smoke && npm run recovery-smoke"
+  }
+}
