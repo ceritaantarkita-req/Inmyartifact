@@ -27,9 +27,9 @@ Implemented:
 - prepared-but-disabled ecosystem contracts;
 - unit/boundary tests and full-stack smoke QA.
 
-## V2.x Phase 3 resolver pilot candidate
+## V2.x Phase 3 resolver/CAS pilot
 
-The Phase 3 branch adds a deterministic **in-process, read-only resolver pilot foundation** over the accepted Artifact service.
+The Phase 3 branch contains a deterministic **in-process, read-only resolver foundation** over the accepted Artifact service.
 
 It separates:
 
@@ -41,20 +41,38 @@ content identity    sha256:<digest>
 
 The resolver accepts only explicit `art_...` bindings and per-caller grants. Knowing a digest never authorizes access.
 
-Pilot operations are limited to:
+Pilot operations remain limited to:
 
 ```text
 artifact.metadata.read
 artifact.bytes.prepare
 ```
 
-Checks include exact caller/operation, owner product, sensitivity cap, allowed sync class, byte quota, binding drift and current content integrity. The returned descriptor does not expose the local Artifact record ID or any filesystem path.
+Checks include exact caller/operation, owner product, sensitivity cap, allowed sync class, byte quota, binding drift and current content integrity. Resolver output does not expose the local Artifact record ID or any filesystem path.
 
-The branch also contains a **persistent product-owned binding registry foundation**. It persists bounded `art_...` -> local Artifact mappings and `PRODUCT_PIN` / `PRODUCT_LEASE` intent through the existing validated store abstraction. Only the owner product may register a binding or change its retention intent, and a binding must match current Artifact source truth before registration.
+The branch also contains a **persistent product-owned binding registry foundation**. It persists bounded `art_...` -> local Artifact mappings and `PRODUCT_PIN` / `PRODUCT_LEASE` intent through the existing validated store abstraction. Only the owner product may register a binding or change retention intent, and a binding must match current Artifact source truth before registration.
 
-Lease expiry is diagnostic only. An expired lease becomes `LEASE_EXPIRED_REVIEW_REQUIRED`; it never becomes automatic GC authority and never deletes Artifact bytes.
+Lease expiry remains diagnostic only:
 
-See `docs/RESOLVER_PILOT_V1.md` and `docs/RESOLVER_REGISTRY_V1.md`.
+```text
+LEASE_EXPIRED_REVIEW_REQUIRED
+eligibleForGc = false
+```
+
+The newest candidate slice adds **non-destructive reconciliation plus cold backup/restore and corruption-recovery evidence**. Reconciliation can classify retained-reference failure, binding drift, expired leases, unbound records and orphan blobs, but its contract fixes:
+
+```text
+automaticDeletesAllowed = false
+gcCandidates = []
+```
+
+The recovery smoke treats `state.json`, `blobs/` and `resolver-registry.json` as one consistency unit, proves corruption is detected as restore-required, restores that unit into a clean runtime and verifies that the same `art_...` identity can again prepare verified content.
+
+See:
+
+- `docs/RESOLVER_PILOT_V1.md`;
+- `docs/RESOLVER_REGISTRY_V1.md`;
+- `docs/RECONCILIATION_RECOVERY_V1.md`.
 
 ## Still not implemented or adopted
 
@@ -66,9 +84,10 @@ See `docs/RESOLVER_PILOT_V1.md` and `docs/RESOLVER_REGISTRY_V1.md`.
 - production ecosystem callers or Hub authority;
 - cross-product database access;
 - credential storage;
-- enforced production retention/pin/lease policy;
+- enforced production retention/pin/lease deletion policy;
 - automatic deletion on lease expiry;
-- production backup/restore/reconciliation closure;
+- production backup scheduling or remote backup transport;
+- production restore endpoint;
 - automatic V2.x resolver/CAS adoption.
 
 SHA-256 is content identity and integrity evidence. It is not authorization and does not establish that content is safe.
@@ -85,7 +104,7 @@ no background/time-based GC
 integrity audit reports orphan blobs but does not delete them
 ```
 
-The Phase 3 resolver and registry candidates do not silently replace this rule. Multi-product retention/GC enforcement remains separately gated.
+The Phase 3 resolver, registry and reconciliation candidates do not silently replace this rule. Multi-product retention/GC enforcement remains separately gated.
 
 ## Run
 
@@ -103,10 +122,12 @@ Open `http://127.0.0.1:17432`.
 npm run qa
 ```
 
-Exact-head Phase 3 acceptance uses the local Ubuntu/WSL procedure documented on the Phase 3 branch. GitHub-hosted Actions is not an acceptance dependency while hosted billing/runner constraints apply.
+The Phase 3 candidate QA includes syntax checks, full tests, standalone smoke and a local cold backup/restore corruption-recovery smoke.
+
+Exact-head Phase 3 acceptance uses the local Ubuntu/WSL procedures documented on the Phase 3 branch. GitHub-hosted Actions is not an acceptance dependency while hosted billing/runner constraints apply.
 
 ## Integration boundary
 
-`INMYARTIFACT_ECOSYSTEM_ENABLED=1` remains intentionally unsupported by the standalone server. The resolver and registry candidates are not exposed through the server or registered with InMyHub.
+`INMYARTIFACT_ECOSYSTEM_ENABLED=1` remains intentionally unsupported by the standalone server. The resolver, registry and reconciliation candidates are not exposed through the server or registered with InMyHub.
 
-A later Phase 3 gate must separately accept Hub authority, retention/GC decision and recovery semantics, backup/restore/reconciliation, bounded transport, one consumer pilot and measured storage value before ecosystem adoption can be declared.
+A later Phase 3 gate must separately make an explicit retention/GC decision, define Hub authority, add one bounded consumer pilot, and measure duplicate-content/storage value before ecosystem adoption can be declared.
