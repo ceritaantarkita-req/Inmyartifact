@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inmy.local/schemas/artifact-reconciliation-report-v1.schema.json",
+  "title": "InMyArtifact Reconciliation Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "reportVersion",
+    "observedAt",
+    "status",
+    "retainedReferencesIntact",
+    "automaticDeletesAllowed",
+    "gcCandidates",
+    "counts",
+    "retained",
+    "findings"
+  ],
+  "properties": {
+    "reportVersion": { "const": "1.0.0" },
+    "observedAt": { "type": "string", "minLength": 20, "maxLength": 40 },
+    "status": {
+      "type": "string",
+      "enum": ["HEALTHY", "REVIEW_REQUIRED", "RESTORE_OR_RECONCILE_REQUIRED"]
+    },
+    "retainedReferencesIntact": { "type": "boolean" },
+    "automaticDeletesAllowed": { "const": false },
+    "gcCandidates": { "type": "array", "maxItems": 0 },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bindings",
+        "localArtifacts",
+        "blockingFindings",
+        "reviewFindings",
+        "integrityMissing",
+        "integrityCorrupt",
+        "integrityOrphans"
+      ],
+      "properties": {
+        "bindings": { "type": "integer", "minimum": 0, "maximum": 4096 },
+        "localArtifacts": { "type": "integer", "minimum": 0, "maximum": 4096 },
+        "blockingFindings": { "type": "integer", "minimum": 0, "maximum": 8192 },
+        "reviewFindings": { "type": "integer", "minimum": 0, "maximum": 8192 },
+        "integrityMissing": { "type": "integer", "minimum": 0, "maximum": 4096 },
+        "integrityCorrupt": { "type": "integer", "minimum": 0, "maximum": 4096 },
+        "integrityOrphans": { "type": "integer", "minimum": 0, "maximum": 4096 }
+      }
+    },
+    "retained": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifactId", "digest", "ownerProduct", "retentionState"],
+        "properties": {
+          "artifactId": { "type": "string", "pattern": "^art_[A-Za-z0-9_-]{16,96}$" },
+          "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+          "ownerProduct": { "type": "string", "minLength": 2, "maxLength": 120 },
+          "retentionState": {
+            "type": "string",
+            "enum": ["PINNED", "LEASE_ACTIVE", "LEASE_EXPIRED_REVIEW_REQUIRED"]
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 8192,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "severity", "artifactId", "digest", "ownerProduct", "action", "detail"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "BOUND_RECORD_MISSING",
+              "BINDING_DRIFT",
+              "BOUND_CONTENT_MISSING",
+              "BOUND_CONTENT_CORRUPT",
+              "LEASE_EXPIRED_OWNER_REVIEW",
+              "UNBOUND_LOCAL_RECORD",
+              "ORPHAN_BLOB"
+            ]
+          },
+          "severity": { "type": "string", "enum": ["BLOCKING", "REVIEW"] },
+          "artifactId": {
+            "oneOf": [
+              { "type": "null" },
+              { "type": "string", "pattern": "^art_[A-Za-z0-9_-]{16,96}$" }
+            ]
+          },
+          "digest": {
+            "oneOf": [
+              { "type": "null" },
+              { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+            ]
+          },
+          "ownerProduct": {
+            "oneOf": [
+              { "type": "null" },
+              { "type": "string", "minLength": 2, "maxLength": 120 }
+            ]
+          },
+          "action": { "type": "string", "minLength": 3, "maxLength": 120 },
+          "detail": { "type": "string", "minLength": 3, "maxLength": 400 }
+        }
+      }
+    }
+  }
+}
