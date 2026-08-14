@@ -2,9 +2,9 @@
 
 Repository: `Inmyartifact` (existing GitHub casing preserved). Product/UI name: **InMyArtifact**.
 
-InMyArtifact v0.1 is a standalone, local-first content-addressed store for opaque artifact bytes.
+InMyArtifact began as a standalone, local-first content-addressed store for opaque artifact bytes. V2.x Phase 3 now evaluates a bounded resolver/CAS pilot without changing the accepted standalone storage semantics.
 
-## Current standalone scope
+## Accepted standalone storage scope
 
 Implemented:
 
@@ -27,24 +27,52 @@ Implemented:
 - prepared-but-disabled ecosystem contracts;
 - unit/boundary tests and full-stack smoke QA.
 
-Not implemented:
+## V2.x Phase 3 resolver pilot candidate
+
+The Phase 3 branch adds a deterministic **in-process, read-only resolver pilot foundation** over the accepted Artifact service.
+
+It separates:
+
+```text
+ecosystem identity  art_<opaque>
+local record id     artifact_<uuid>
+content identity    sha256:<digest>
+```
+
+The resolver accepts only explicit `art_...` bindings and per-caller grants. Knowing a digest never authorizes access.
+
+Pilot operations are limited to:
+
+```text
+artifact.metadata.read
+artifact.bytes.prepare
+```
+
+Checks include exact caller/operation, owner product, sensitivity cap, allowed sync class, byte quota, binding drift and current content integrity. The returned descriptor does not expose the local Artifact record ID or any filesystem path.
+
+Product-authoritative `PRODUCT_PIN` / `PRODUCT_LEASE` intent is represented in the pilot contract, but retention enforcement, lease expiry processing and GC remain disabled until a later Phase 3 gate.
+
+See `docs/RESOLVER_PILOT_V1.md`.
+
+## Still not implemented or adopted
 
 - malware scanning or trust classification of bytes;
 - archive extraction or package installation;
 - artifact execution;
 - remote sync or distributed storage;
 - background/time-based garbage collection;
-- ecosystem callers or Hub authority;
+- production ecosystem callers or Hub authority;
 - cross-product database access;
 - credential storage;
-- production retention/pin policy;
-- V2.x resolver/CAS adoption.
+- persistent ecosystem ownership/binding registry;
+- enforced production retention/pin/lease policy;
+- automatic V2.x resolver/CAS adoption.
 
 SHA-256 is content identity and integrity evidence. It is not authorization and does not establish that content is safe.
 
-## Retention rule in standalone v0.1
+## Standalone retention rule
 
-The standalone policy is deliberately simple and fail-safe:
+The accepted standalone storage policy remains deliberately simple and fail-safe:
 
 ```text
 metadata record persists until explicit delete
@@ -54,7 +82,7 @@ no background/time-based GC
 integrity audit reports orphan blobs but does not delete them
 ```
 
-Pins, product ownership, authoritative retention and GC are later V2.x ecosystem-pilot gates.
+The Phase 3 resolver pilot does not silently replace this rule. Multi-product pin/lease/retention/GC enforcement remains separately gated.
 
 ## Run
 
@@ -69,14 +97,13 @@ Open `http://127.0.0.1:17432`.
 ## QA
 
 ```bash
-npm test
-npm run smoke
+npm run qa
 ```
 
-Final standalone acceptance should use the clean exact-head WSL/local procedure in `docs/LOCAL_ACCEPTANCE.md`. GitHub-hosted Actions is not the default acceptance path while paid-hosted runner/billing constraints apply.
+Exact-head Phase 3 acceptance uses the local Ubuntu/WSL procedure documented on the Phase 3 branch. GitHub-hosted Actions is not an acceptance dependency while hosted billing/runner constraints apply.
 
 ## Integration boundary
 
-`INMYARTIFACT_ECOSYSTEM_ENABLED=1` intentionally fails startup in v0.1. See `docs/INTEGRATION.md`.
+`INMYARTIFACT_ECOSYSTEM_ENABLED=1` remains intentionally unsupported by the standalone server. The resolver pilot is not exposed through the server or registered with InMyHub.
 
-Standalone acceptance, if achieved, does not adopt InMyArtifact into the ecosystem. A later V2.x Artifact/CAS resolver pilot must separately define Hub authorization, `art...` ownership/reference semantics, retention/pins/GC, quotas, resolver contracts, backup/restore operations and measured benefit.
+A later Phase 3 gate must separately accept persistent ownership bindings, Hub authority, retention enforcement/GC, backup/restore/reconciliation, bounded transport, one consumer pilot and measured storage value before ecosystem adoption can be declared.
