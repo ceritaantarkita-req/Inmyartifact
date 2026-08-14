@@ -50,9 +50,11 @@ artifact.bytes.prepare
 
 Checks include exact caller/operation, owner product, sensitivity cap, allowed sync class, byte quota, binding drift and current content integrity. The returned descriptor does not expose the local Artifact record ID or any filesystem path.
 
-Product-authoritative `PRODUCT_PIN` / `PRODUCT_LEASE` intent is represented in the pilot contract, but retention enforcement, lease expiry processing and GC remain disabled until a later Phase 3 gate.
+The branch also contains a **persistent product-owned binding registry foundation**. It persists bounded `art_...` -> local Artifact mappings and `PRODUCT_PIN` / `PRODUCT_LEASE` intent through the existing validated store abstraction. Only the owner product may register a binding or change its retention intent, and a binding must match current Artifact source truth before registration.
 
-See `docs/RESOLVER_PILOT_V1.md`.
+Lease expiry is diagnostic only. An expired lease becomes `LEASE_EXPIRED_REVIEW_REQUIRED`; it never becomes automatic GC authority and never deletes Artifact bytes.
+
+See `docs/RESOLVER_PILOT_V1.md` and `docs/RESOLVER_REGISTRY_V1.md`.
 
 ## Still not implemented or adopted
 
@@ -64,8 +66,9 @@ See `docs/RESOLVER_PILOT_V1.md`.
 - production ecosystem callers or Hub authority;
 - cross-product database access;
 - credential storage;
-- persistent ecosystem ownership/binding registry;
 - enforced production retention/pin/lease policy;
+- automatic deletion on lease expiry;
+- production backup/restore/reconciliation closure;
 - automatic V2.x resolver/CAS adoption.
 
 SHA-256 is content identity and integrity evidence. It is not authorization and does not establish that content is safe.
@@ -82,7 +85,7 @@ no background/time-based GC
 integrity audit reports orphan blobs but does not delete them
 ```
 
-The Phase 3 resolver pilot does not silently replace this rule. Multi-product pin/lease/retention/GC enforcement remains separately gated.
+The Phase 3 resolver and registry candidates do not silently replace this rule. Multi-product retention/GC enforcement remains separately gated.
 
 ## Run
 
@@ -104,6 +107,6 @@ Exact-head Phase 3 acceptance uses the local Ubuntu/WSL procedure documented on 
 
 ## Integration boundary
 
-`INMYARTIFACT_ECOSYSTEM_ENABLED=1` remains intentionally unsupported by the standalone server. The resolver pilot is not exposed through the server or registered with InMyHub.
+`INMYARTIFACT_ECOSYSTEM_ENABLED=1` remains intentionally unsupported by the standalone server. The resolver and registry candidates are not exposed through the server or registered with InMyHub.
 
-A later Phase 3 gate must separately accept persistent ownership bindings, Hub authority, retention enforcement/GC, backup/restore/reconciliation, bounded transport, one consumer pilot and measured storage value before ecosystem adoption can be declared.
+A later Phase 3 gate must separately accept Hub authority, retention/GC decision and recovery semantics, backup/restore/reconciliation, bounded transport, one consumer pilot and measured storage value before ecosystem adoption can be declared.
